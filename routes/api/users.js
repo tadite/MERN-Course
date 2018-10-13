@@ -7,6 +7,7 @@ const keys = require("../../config/keys");
 const passport = require("passport");
 
 const User = require("../../models/User");
+const Profile = require("../../models/Profile");
 
 const validateRegisterInput = require("../../validation/register");
 const validateLoginInput = require("../../validation/login");
@@ -108,6 +109,21 @@ router.get(
 			id: req.user.id,
 			name: req.user.name,
 			email: req.user.email
+		});
+	}
+);
+
+// @route DELETE /api/users
+// @desc Current user
+// @access private
+router.delete(
+	"/",
+	passport.authenticate("jwt", { session: false }),
+	(req, res) => {
+		User.findByIdAndDelete(req.user.id).then(()=>{
+			Profile.findOneAndRemove({user:req.user.id}).then(()=>{
+				return res.status(204).json({success:true});
+			})
 		});
 	}
 );
