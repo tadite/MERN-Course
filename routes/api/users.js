@@ -120,12 +120,32 @@ router.delete(
 	"/",
 	passport.authenticate("jwt", { session: false }),
 	(req, res) => {
-		User.findByIdAndDelete(req.user.id).then(()=>{
-			Profile.findOneAndRemove({user:req.user.id}).then(()=>{
-				return res.status(204).json({success:true});
-			})
+		User.findByIdAndDelete(req.user.id).then(() => {
+			Profile.findOneAndRemove({ user: req.user.id }).then(() => {
+				return res.status(204).json({ success: true });
+			});
 		});
 	}
 );
+
+// @route GET /api/users/:user_id/profile
+// @desc Get user profile by user_id
+// @access public
+router.get("/:user_id/profile", (req, res) => {
+	const errors = {};
+	Profile.findOne({ user: req.params.user_id })
+		.populate("user", ["name", "avatar"])
+		.then(profile => {
+			if (!profile) {
+				errors.noprofile = "There is no profile for this user";
+				return res.status(404).json(errors);
+			}
+			res.json(profile);
+		})
+		.catch(err => {
+			errors.noprofile = "There is no profile for this user";
+			res.status(400).json(errors);
+		});
+});
 
 module.exports = router;

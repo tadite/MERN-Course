@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const passport = require("passport");
 
-const validatePostnInput = require("../../validation/post");
+const validatePostInput = require("../../validation/post");
+const validateCommentInput = require("../../validation/comment");
 
 const Post = require("../../models/Post");
 const User = require("../../models/User");
@@ -40,7 +41,7 @@ router.post(
 	"/",
 	passport.authenticate("jwt", { session: false }),
 	(req, res) => {
-		const { errors, isValid } = validatePostnInput(req.body);
+		const { errors, isValid } = validatePostInput(req.body);
 
 		if (!isValid) {
 			return res.status(400).json(errors);
@@ -87,11 +88,11 @@ router.delete(
 	}
 );
 
-// @route POST /api/posts/like/:post_id
+// @route POST /api/posts/:post_id/like
 // @desc Like post
 // @access private
 router.post(
-	"/like/:post_id",
+	"/:post_id/like",
 	passport.authenticate("jwt", { session: false }),
 	(req, res) => {
 		Post.findById(req.params.post_id)
@@ -116,11 +117,11 @@ router.post(
 	}
 );
 
-// @route POST /api/posts/unlike/:post_id
+// @route POST /api/posts/:post_id/unlike
 // @desc Unlike post
 // @access private
 router.post(
-	"/unlike/:post_id",
+	"/:post_id/unlike",
 	passport.authenticate("jwt", { session: false }),
 	(req, res) => {
 		Post.findById(req.params.post_id)
@@ -141,6 +142,153 @@ router.post(
 
 				post.likes.splice(likeIndexToRemove, 1);
 
+				post.save().then(post => res.json(post));
+			})
+			.catch(err => {
+				console.log(err);
+				res.status(404).json({ postnotfound: "There is no post with that id" });
+			});
+	}
+);
+
+// @route POST /api/posts/:post_id/comment
+// @desc Comment post
+// @access private
+router.post(
+	"/:post_id/comment",
+	passport.authenticate("jwt", { session: false }),
+	(req, res) => {
+		Post.findById(req.params.post_id)
+			.then(post => {
+				const { errors, isValid } = validateCommentInput(req.body);
+
+				if (!isValid) {
+					return res.status(400).json(errors);
+				}
+
+				const newComment = {
+					text: req.body.text,
+					name: req.body.name,
+					avatar: req.body.avatar,
+					user: req.user.id
+				};
+
+				post.comments.unshift(newComment);
+
+				post.save().then(post => res.json(post));
+			})
+			.catch(err => {
+				console.log(err);
+				res.status(404).json({ postnotfound: "There is no post with that id" });
+			});
+	}
+);
+
+// @route DELETE /api/posts/:post_id/comment/:comment_id
+// @desc Delete comment
+// @access private
+router.delete(
+	"/:post_id/comment/:comment_id",
+	passport.authenticate("jwt", { session: false }),
+	(req, res) => {
+		Post.findById(req.params.post_id)
+			.then(post => {
+				const commentRemoveIndex = post.comments
+					.map(item => item._id.toString())
+					.indexOf(req.params.comment_id);
+
+				if (commentRemoveIndex < 0) {
+					return res
+						.status(404)
+						.json({ commentnotfound: "There is no comment with that id" });
+				}
+
+				post.comments.splice(commentRemoveIndex, 1);
+
+				post.save().then(post => res.json(post));
+			})
+			.catch(err => {
+				console.log(err);
+				res.status(404).json({ postnotfound: "There is no post with that id" });
+			});
+	}
+);
+
+// @route POST /api/posts/:post_id/comment/:comment_id/like
+// @desc Comment like
+// @access private
+router.post(
+	"/:post_id/comment/:comment_id/like",
+	passport.authenticate("jwt", { session: false }),
+	(req, res) => {
+		Post.findById(req.params.post_id)
+			.then(post => {
+				const commentIndexToLike = post.comments
+					.map(comment => comment._id.toString())
+					.indexOf(req.params.comment_id);
+
+				if (commentIndexToLike < 0) {
+					return res
+						.status(400)
+						.json({ commentnotfound: "There is no comment with that id" });
+				}
+
+				const commentToLike = post.comments[commentIndexToLike];
+				if (
+					commentToLike.likes.filter(
+						like => like.user.toString() === req.user.id
+					).length > 0
+				) {
+					return res.json({ alreadyliked: "User already liked this comment" });
+				}
+
+				commentToLike.likes.unshift({ user: req.user.id });
+
+				post.comments.set(commentIndexToLike, commentToLike);
+				post.save().then(post => res.json(post));
+			})
+			.catch(err => {
+				console.log(err);
+				res.status(404).json({ postnotfound: "There is no post with that id" });
+			});
+	}
+);
+
+// @route POST /api/posts/:post_id/comment/:comment_id/unlike
+// @desc Comment like
+// @access private
+router.post(
+	"/:post_id/comment/:comment_id/unlike",
+	passport.authenticate("jwt", { session: false }),
+	(req, res) => {
+		Post.findById(req.params.post_id)
+			.then(post => {
+				const commentIndexToUnlike = post.comments
+					.map(comment => comment._id.toString())
+					.indexOf(req.params.comment_id);
+
+				if (commentIndexToUnlike < 0) {
+					return res
+						.status(400)
+						.json({ commentnotfound: "There is no comment with that id" });
+				}
+
+				const commentToUnlike = post.comments[commentIndexToUnlike];
+				if (
+					commentToUnlike.likes.filter(
+						like => like.user.toString() === req.user.id
+					).length == 0
+				) {
+					return res.json({ alreadyliked: "User have not liked this comment" });
+				}
+
+				const likeIndexToRemove = commentToUnlike.likes
+					.map(like => like.user.toString())
+					.indexOf(req.user.id);
+
+				commentToUnlike.likes.splice(likeIndexToRemove, 1);
+
+				post.comments.set(commentIndexToUnlike, commentToUnlike);
 				post.save().then(post => res.json(post));
 			})
 			.catch(err => {
