@@ -72,3 +72,22 @@ export const addEducation = (eduData, history) => dispatch => {
 			})
 		);
 };
+
+export const deleteExperience = expId => dispatch => {
+	if (window.confirm("Are you sure?")) {
+		axios
+			.delete(`/api/profile/experience/${expId}`)
+			.then(res => dispatch({ type: GET_PROFILE, payload: res.data }))
+			.catch(err => dispatch({ type: GET_ERRORS, payload: err.response.data }));
+	}
+};
+
+
+export const deleteEducation = eduId => dispatch => {
+	if (window.confirm("Are you sure?")) {
+		axios
+			.delete(`/api/profile/education/${eduId}`)
+			.then(res => dispatch({ type: GET_PROFILE, payload: res.data }))
+			.catch(err => dispatch({ type: GET_ERRORS, payload: err.response.data }));
+	}
+};
