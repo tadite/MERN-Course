@@ -2,6 +2,7 @@ import axios from "axios";
 
 import {
 	GET_PROFILE,
+	GET_PROFILES,
 	PROFILE_LOADING,
 	GET_ERRORS,
 	CLEAR_CURRENT_PROFILE,
@@ -82,7 +83,6 @@ export const deleteExperience = expId => dispatch => {
 	}
 };
 
-
 export const deleteEducation = eduId => dispatch => {
 	if (window.confirm("Are you sure?")) {
 		axios
@@ -90,4 +90,12 @@ export const deleteEducation = eduId => dispatch => {
 			.then(res => dispatch({ type: GET_PROFILE, payload: res.data }))
 			.catch(err => dispatch({ type: GET_ERRORS, payload: err.response.data }));
 	}
+};
+
+export const getProfiles = () => dispatch => {
+	dispatch(setProfileLoading());
+	axios
+		.get("/api/profile/all")
+		.then(res => dispatch({ type: GET_PROFILES, payload: res.data }))
+		.catch(err => dispatch({ type: GET_PROFILES, payload: null }));
 };
