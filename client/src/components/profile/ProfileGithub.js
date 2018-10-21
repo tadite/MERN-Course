@@ -1,13 +1,14 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
+import keys from "../../../../config/keys";
 
 class ProfileGithub extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			clientId: "76d18279cc17fd86ca10",
-			clientSecret: "70f142b37dc1bc7b2876ddf3c7fa05f5b3ff0061",
+			clientId: keys.githubClientId,
+			clientSecret: keys.githubClientSecret,
 			count: 5,
 			sort: "create: asc",
 			repos: []
