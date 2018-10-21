@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
-import keys from "../../../../config/keys";
+import keys from "../../config/keys";
 
 class ProfileGithub extends Component {
 	constructor(props) {
